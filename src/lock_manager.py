@@ -9,34 +9,37 @@ class AcquireLockException(Exception):
 
 class LockManager:
   def __init__(self, site_variables):
+    self._site_variables = site_variables
     self._init_lock_tables()
 
 
   def _init_lock_tables(self):
-    for s in site_variables:
+    for s in self._site_variables:
       self._write_lock_table[s] = None
       self._read_lock_table[s]  = []
 
 
   def acquire_read_lock(self, transaction, variable):
-    if variable in self._write_lock_table:
-      if self._write_lock_table[variable] != transaction.get_id():
-        raise AcquireLockException(Lock.READ, self._write_lock_table[variable])
-        return
-    self._read_lock_table[variable].append(transaction.get_id())
+    if not self.txn_has_read_lock(transaction, variable):
+      if variable in self._write_lock_table:
+        if self._write_lock_table[variable] != transaction.get_id():
+          raise AcquireLockException(Lock.READ, self._write_lock_table[variable])
+          return
+      self._read_lock_table[variable].append(transaction.get_id())
 
 
   def acquire_write_lock(self, transaction, variable):
-    if variable in self._write_lock_table:
-      if self._write_lock_table[variable] != transaction.get_id():
-        raise AcquireLockException(Lock.WRITE, self._write_lock_table[variable])
-        return
-    elif variable in self._read_lock_table:
-      for txn in self._read_lock_table[variable]:
-        if txn != transaction.get_id():
-          raise AcquireLockException(Lock.READ, self._read_lock_table[variable])
+    if not self.txn_has_write_lock(transaction, variable):
+      if variable in self._write_lock_table:
+        if self._write_lock_table[variable] != transaction.get_id():
+          raise AcquireLockException(Lock.WRITE, self._write_lock_table[variable])
           return
-    self._write_lock_table[variable] = transaction.get_id()
+      elif variable in self._read_lock_table:
+        for txn in self._read_lock_table[variable]:
+          if txn != transaction.get_id():
+            raise AcquireLockException(Lock.READ, self._read_lock_table[variable])
+            return
+      self._write_lock_table[variable] = transaction.get_id()
 
 
   def release_read_lock(self, transaction, variable):
@@ -78,3 +81,28 @@ class LockManager:
          self._read_lock_table[variable].remove(transaction.get_id())
       except ValueError:
         continue
+
+
+  def txn_has_write_lock(self, transaction, variable):
+    return self._lookup_write_lock(variable) == transaction.get_id()
+
+
+  def txn_has_read_lock(self, transaction, variable):
+    transactions = self._lookup_read_lock(variable)
+    if transactions:
+      for t in transactions:
+        if t == transaction.get_id():
+          return True
+    return False
+
+
+  def _lookup_read_lock(self, variable):
+    if variable in self._read_lock_table:
+      return self._read_lock_table[variable]
+    return []
+
+
+  def _lookup_write_lock(self, variable):
+    if variable in self._write_lock_table:
+      return self._write_lock_table[variable]
+    return None

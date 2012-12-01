@@ -16,6 +16,10 @@ class Transaction:
     self._type   = txn_type
 
 
+  def get_id(self):
+    return self._id
+
+
   def get_ts(self):
     return self._ts
 

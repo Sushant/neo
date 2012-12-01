@@ -1,0 +1,75 @@
+from variable import Variable
+from lock_manager import LockManager
+
+class SiteStatus:
+  UP   = 0
+  DOWN = 1
+
+class Site:
+  def __init__(site_id):
+    self._id     = site_id
+    self._status = SiteStatus.UP
+    self._ts = 0
+    self._init_variables()
+    self._lm     = LockManager(self._site_variables.keys())
+
+
+  def _init_variables(self):
+    self._site_variables = {}
+    for i in xrange(1, 21):
+      var_id = 'x' + str(i)
+      value  = int('10' + str(i))
+      if i % 2 == 0:  # Even numbered variables are replicated
+        self._site_variables[var_id] = Variable(var_id, value)
+      elif (i + 1) % 10 == self._id:
+        self.site_variables[var_id] = Variable(var_id, value)
+
+
+  def dump(self, var=None):
+    if var:
+      if var in self._site_variables:
+        return self._site_variables[var].read_committed()
+      print 'Variable doesn\'t exist on site'
+    else:
+      var_dict = {}
+      for var, obj in self._site_variables.iteritems():
+        var_dict[var] = obj.read_committed()
+      return var_dict
+
+
+  def is_up(self):
+    return self_status == SiteStatus.UP
+
+
+  def fail(self):
+    if self.is_up():
+      self._status = SiteStatus.DOWN
+      self._lm.release_all_locks()
+
+
+  def recover(self):
+    pass
+
+
+  def write(self, transaction, variable, value):
+    if variable in self._site_variables:
+      self._lm.acquire_write_lock(transaction, variable)
+      self._site_variables[variable].write(transaction, value)
+    else:
+      print 'Variable doesn\'t exist on site'
+
+
+  def read(self, transaction, variable):
+    if variable in self._site_variables:
+      if self._lm.txn_has_write_lock(transaction, variable):
+        self._site_variables[variable].read_uncommitted(transaction)
+      else:
+        self._site_variables[variable].read_committed(transaction)
+    else:
+      print 'Variable doesn\'t exist on site'
+
+  def set_timestamp(self, ts):
+    if self._ts != (ts - 1):  # Site failed some time ago, needs to recover
+      self.recover()
+    else:
+      self._ts = ts
