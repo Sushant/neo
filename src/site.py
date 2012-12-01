@@ -28,7 +28,7 @@ class Site:
   def dump(self, var=None):
     if var:
       if var in self._site_variables:
-        return self._site_variables[var].read_committed()
+        return {var: self._site_variables[var].read_committed()}
       print 'Variable doesn\'t exist on site'
     else:
       var_dict = {}
@@ -64,9 +64,17 @@ class Site:
       if self._lm.txn_has_write_lock(transaction, variable):
         self._site_variables[variable].read_uncommitted(transaction)
       else:
+        self._lm.acquire_read_lock(transaction, variable)
         self._site_variables[variable].read_committed(transaction)
     else:
       print 'Variable doesn\'t exist on site'
+
+
+  def commit(self, transaction):
+    for var in self._site_variables.keys():
+      if self._lm.txn_has_write_lock(transaction, var):
+        self._site_variables[var].commit(self._ts)
+    self._lm.release_all_locks(transaction)
 
   def set_timestamp(self, ts):
     if self._ts != (ts - 1):  # Site failed some time ago, needs to recover

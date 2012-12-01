@@ -9,7 +9,8 @@ class TransactionStatus:
 
 
 class Transaction:
-  def __init__(self, txn_id, ts, txn_status=TransactionStatus.ACTIVE, txn_type=TransactionType.READ_WRITE):
+  def __init__(self, txn_id, ts, txn_type=TransactionType.READ_WRITE,
+      txn_status=TransactionStatus.ACTIVE):
     self._id     = txn_id
     self._ts     = ts   # Timestamp of transaction
     self._status = txn_status
