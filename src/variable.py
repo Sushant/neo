@@ -27,7 +27,7 @@ class Variable:
     if not transaction or transaction.get_type == TransactionType.READ_WRITE:
       return self._committed_values[-1][1]
     else:
-      for tick, val in self._committed_values.values():
+      for tick, val in self._committed_values:
         if tick <= transaction.get_ts():
           retval = val
         else:
