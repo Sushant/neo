@@ -25,8 +25,7 @@ class LockManager:
     if not self.txn_has_read_lock(transaction, variable):
       if self._write_lock_table[variable] != None:
         if self._write_lock_table[variable] != transaction.get_id():
-          raise AcquireLockException(Lock.READ, self._write_lock_table[variable])
-          return
+          raise AcquireLockException(Lock.WRITE, self._write_lock_table[variable])
       self._read_lock_table[variable].append(transaction.get_id())
 
 
@@ -72,6 +71,7 @@ class LockManager:
   def _release_write_locks(self, transaction):
     for variable in self._write_lock_table.keys():
       if self._write_lock_table[variable] == transaction.get_id():
+        print 'Releasing lock on %s for txn: %s' % (variable, transaction.get_id())
         self._write_lock_table[variable] = None
 
 

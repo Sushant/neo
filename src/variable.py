@@ -24,12 +24,31 @@ class Variable:
 
 
   def read_committed(self, transaction=None):
-    if not transaction or transaction.get_type == TransactionType.READ_WRITE:
-      return self._committed_values[-1][1]
-    else:
+    if transaction and transaction.get_type == TransactionType.READ_ONLY:
+      print 'READ_ONLY committed'
       for tick, val in self._committed_values:
         if tick <= transaction.get_ts():
           retval = val
         else:
           break
       return retval
+    else:
+      print 'READ_WRITE committed'
+      return self._committed_values[-1][1]
+
+
+  # Used for recovery
+  def dump_committed(self):
+    return self._committed_values
+
+
+  def dump_uncommited(self):
+    return self._uncommitted_value
+
+
+  def load_committed(self, values):
+    self._committed_values = values
+
+
+  def load_uncommitted(self, value):
+    self._uncommitted_value = value

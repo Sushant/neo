@@ -1,5 +1,6 @@
 from variable import Variable
 from lock_manager import LockManager
+from transaction import TransactionType
 
 class SiteStatus:
   UP   = 0
@@ -37,6 +38,10 @@ class Site:
       return var_dict
 
 
+  def dump_state(self):
+    return self._site_variables
+
+
   def is_up(self):
     return self._status == SiteStatus.UP
 
@@ -47,8 +52,11 @@ class Site:
       self._lm.release_all_locks()
 
 
-  def recover(self):
-    pass
+  def recover(self, replicated_data):
+    if not self.is_up():
+
+      self_status = SiteStatus.UP
+
 
 
   def write(self, transaction, variable, value):
@@ -64,7 +72,8 @@ class Site:
       if self._lm.txn_has_write_lock(transaction, variable):
         return self._site_variables[variable].read_uncommitted(transaction)
       else:
-        self._lm.acquire_read_lock(transaction, variable)
+        if transaction.get_type() != TransactionType.READ_ONLY:
+          self._lm.acquire_read_lock(transaction, variable)
         return self._site_variables[variable].read_committed(transaction)
     else:
       return None
@@ -74,4 +83,8 @@ class Site:
     for var in self._site_variables.keys():
       if self._lm.txn_has_write_lock(transaction, var):
         self._site_variables[var].commit(timestamp)
+    self._lm.release_all_locks(transaction)
+
+
+  def abort(self, transaction):
     self._lm.release_all_locks(transaction)

@@ -36,3 +36,7 @@ class Transaction:
   def wait(self):
     if self._status != TransactionStatus.WAITING:
       self._status = TransactionStatus.WAITING
+
+  def activate(self):
+    if self._status != TransactionStatus.ACTIVE:
+      self._status = TransactionStatus.ACTIVE
