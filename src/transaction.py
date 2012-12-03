@@ -40,3 +40,16 @@ class Transaction:
   def activate(self):
     if self._status != TransactionStatus.ACTIVE:
       self._status = TransactionStatus.ACTIVE
+
+  def abort(self):
+    if self._status != TransactionStatus.ABORTED:
+      self._status = TransactionStatus.ABORTED
+
+  def is_aborted(self):
+    return self._status == TransactionStatus.ABORTED
+
+  def is_active(self):
+    return self._status == TransactionStatus.ACTIVE
+
+  def is_waiting(self):
+    return self._status == TransactionStatus.WAITING

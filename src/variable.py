@@ -42,7 +42,7 @@ class Variable:
     return self._committed_values
 
 
-  def dump_uncommited(self):
+  def dump_uncommitted(self):
     return self._uncommitted_value
 
 
@@ -52,3 +52,8 @@ class Variable:
 
   def load_uncommitted(self, value):
     self._uncommitted_value = value
+
+
+  def load_state(self, committed_values, uncommitted_values):
+    self.load_committed(committed_values)
+    self.load_uncommitted(uncommitted_values)

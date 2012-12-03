@@ -26,6 +26,9 @@ class Site:
         self._site_variables[var_id] = Variable(var_id, value)
 
 
+  def get_id(self):
+    return self._id
+
   def dump(self, var=None):
     if var:
       if var in self._site_variables:
@@ -42,6 +45,15 @@ class Site:
     return self._site_variables
 
 
+  def _load_state(self, state):
+    for var_id, var_obj in state.iteritems():
+      if var_id in self._site_variables:
+        uncommitted_values = var_obj.dump_uncommitted()
+        committed_values = var_obj.dump_committed()
+        new_var_obj = Variable(var_id, committed_values[0])
+        new_var_obj.load_state(committed_values, uncommitted_values)
+        self._site_variables[var_id] = new_var_obj
+
   def is_up(self):
     return self._status == SiteStatus.UP
 
@@ -52,10 +64,10 @@ class Site:
       self._lm.release_all_locks()
 
 
-  def recover(self, replicated_data):
+  def recover(self, state):
     if not self.is_up():
-
-      self_status = SiteStatus.UP
+      self._load_state(state)
+      self._status = SiteStatus.UP
 
 
 
