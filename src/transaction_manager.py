@@ -113,20 +113,25 @@ class TransactionManager:
             if retval:
               print 'Read var %s for txn %s at time_stamp %d, value: %s' \
                   % (var, txn_id, self._ts, repr(retval))
-              if transaction.get_status() == TransactionStatus.WAITING:
+              if transaction.is_waiting():
                 transaction.activate()
               return retval
         # If we reach here, we weren't able to find a site to read from
         print 'Unable to read %s, no site available' % var
-        self._wait_list.append(('read', txn_id, var))
-        transaction.wait()
+        if not transaction.is_waiting():
+          self._wait_list.append(('read', txn_id, var))
+          transaction.wait()
       except AcquireLockException as ale:
+        print 'Step 1'
         conflicting_txn_id = ale.args[1]
         conflicting_txn = self._transactions[conflicting_txn_id]
         if transaction.get_ts() > conflicting_txn.get_ts():
+          print 'Step 2'
           self._abort(transaction)
         else:
+          print 'Step 3'
           if not transaction.get_status() == TransactionStatus.WAITING:
+            print 'Step 4'
             transaction.wait()
             self._wait_list.append(('read', txn_id, var))
     else:
@@ -155,8 +160,9 @@ class TransactionManager:
 
   def _retry_waiting_txns(self):
     print 'Wait list: ', self._wait_list
-    while self._wait_list:
-      operation = self._wait_list[0]
+    i = 0
+    while i < len(self._wait_list):
+      operation = self._wait_list[i]
       txn_id = operation[1]
       transaction = self._transactions[txn_id]
       if operation[0] == 'write':
@@ -169,6 +175,8 @@ class TransactionManager:
         self.read(txn_id, var)
       if not transaction.is_waiting():
         self._wait_list.remove(operation)
+      else:
+        i += 1
 
 
   def end(self, txn_id):
@@ -176,7 +184,12 @@ class TransactionManager:
     if not transaction.is_aborted():
       if transaction.get_type() == TransactionType.READ_WRITE:
         for s in self._txn_sites[txn_id]:
-          self._sites[s].commit(transaction, self._ts)
+          if self._sites[s].is_up():
+            self._sites[s].commit(transaction, self._ts)
+          else:
+            print 'One of the site accessed by txn failed, aborting'
+            self._abort(transaction)
+            return
         self._retry_waiting_txns()
       print 'Ended txn %s at time_stamp %d' % (txn_id, self._ts)
     else:
@@ -194,8 +207,10 @@ class TransactionManager:
         return self._sites[site_id].dump()
     else:
       if site_id:
+        var_id = int(var_id[1:])
         return self._sites[site_id].dump(var_id)
       else:
+        var_id = int(var_id[1:])
         sites = self._get_sites_for_var(var_id)
         for s in sites:
           return self._sites[s].dump(var_id)
