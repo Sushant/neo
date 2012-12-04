@@ -17,7 +17,7 @@ class Variable:
 
 
   def write(self, transaction, value):
-    self._uncommitted_value = (transaction.get_id(), value)
+    self._uncommitted_value = (transaction['_id'], value)
 
 
   def commit(self, timestamp):
@@ -27,7 +27,7 @@ class Variable:
 
 
   def read_uncommitted(self, transaction):
-    if self._uncommitted_value[0] == transaction.get_id():
+    if self._uncommitted_value[0] == transaction['_id']:
       return self._uncommitted_value[1]
 
     # Transaction has write lock for this var, but hasn't written to it yet.
@@ -35,9 +35,9 @@ class Variable:
 
 
   def read_committed(self, transaction=None):
-    if transaction and transaction.get_type() == TransactionType.READ_ONLY:
+    if transaction and transaction['_type'] == TransactionType.READ_ONLY:
       for tick, val in self._committed_values:
-        if tick <= transaction.get_ts():
+        if tick <= transaction['_ts']:
           retval = val
         else:
           break

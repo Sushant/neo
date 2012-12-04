@@ -1,7 +1,10 @@
+import sys
 from variable import Variable
 from lock_manager import LockManager
 from transaction import TransactionType
+from lock_manager import AcquireLockException
 
+from SimpleXMLRPCServer import SimpleXMLRPCServer
 
 class SiteStatus:
   UP   = 0
@@ -9,11 +12,26 @@ class SiteStatus:
 
 
 class Site:
-  def __init__(self, site_id):
+  def __init__(self, site_id, port=3590):
     self._id     = site_id
     self._status = SiteStatus.UP
     self._init_variables()
     self._lm     = LockManager(self._site_variables.keys())
+    self._init_server(port)
+
+
+  def _init_server(self, port):
+    self._server = SimpleXMLRPCServer(("localhost", port), allow_none=True)
+    self._server.register_function(self.get_id)
+    self._server.register_function(self.dump)
+    self._server.register_function(self.is_up)
+    self._server.register_function(self.fail)
+    self._server.register_function(self.recover)
+    self._server.register_function(self.write)
+    self._server.register_function(self.read)
+    self._server.register_function(self.commit)
+    self._server.register_function(self.abort)
+    self._server.serve_forever()
 
 
   def _init_variables(self):
@@ -44,19 +62,6 @@ class Site:
       return var_dict
 
 
-  def dump_state(self):
-    return self._site_variables
-
-
-  def _load_state(self, state):
-    for var_id, var_obj in state.iteritems():
-      if var_id in self._site_variables:
-        uncommitted_values = var_obj.dump_uncommitted()
-        committed_values = var_obj.dump_committed()
-        new_var_obj = Variable(var_id, committed_values[0])
-        new_var_obj.load_state(committed_values, uncommitted_values)
-        self._site_variables[var_id] = new_var_obj
-
   def is_up(self):
     return self._status == SiteStatus.UP
 
@@ -67,7 +72,7 @@ class Site:
       self._lm.release_all_locks()
 
 
-  def recover(self, state):
+  def recover(self):
     if not self.is_up():
       #self._load_state(state)
       for var_id, var_obj in self._site_variables.iteritems():
@@ -77,25 +82,34 @@ class Site:
 
 
   def write(self, transaction, variable, value):
-    if variable in self._site_variables:
-      self._lm.acquire_write_lock(transaction, variable)
-      self._site_variables[variable].write(transaction, value)
-    else:
-      print 'Variable doesn\'t exist on site'
+    try:
+      if variable in self._site_variables:
+        self._lm.acquire_write_lock(transaction, variable)
+        self._site_variables[variable].write(transaction, value)
+        return {'status': 'success'}
+      else:
+        return {'status': 'error', 'msg': 'Variable doesn\'t exist on site'}
+    except AcquireLockException as ale:
+      return {'status': 'exception', 'args': ale.args}
 
 
   def read(self, transaction, var_id):
-    if var_id in self._site_variables:
-      if self._site_variables[var_id].is_recovering():
-        return None
-      if self._lm.txn_has_write_lock(transaction, var_id):
-        return self._site_variables[var_id].read_uncommitted(transaction)
+    try:
+      if var_id in self._site_variables:
+        if self._site_variables[var_id].is_recovering():
+          return {'status': 'success', 'data': None}
+        if self._lm.txn_has_write_lock(transaction, var_id):
+          return {'status': 'success',
+              'data': self._site_variables[var_id].read_uncommitted(transaction)}
+        else:
+          if transaction['_type'] != TransactionType.READ_ONLY:
+            self._lm.acquire_read_lock(transaction, var_id)
+          return {'status': 'success',
+              'data': self._site_variables[var_id].read_committed(transaction)}
       else:
-        if transaction.get_type() != TransactionType.READ_ONLY:
-          self._lm.acquire_read_lock(transaction, var_id)
-        return self._site_variables[var_id].read_committed(transaction)
-    else:
-      return None
+        return {'status': 'error', 'data': None}
+    except AcquireLockException as ale:
+      return {'status': 'exception', 'args': ale.args}
 
 
   def commit(self, transaction, timestamp):
@@ -107,3 +121,12 @@ class Site:
 
   def abort(self, transaction):
     self._lm.release_all_locks(transaction)
+
+
+if __name__ == '__main__':
+  if len(sys.argv) != 3:
+      print 'USAGE: python %s <site-id> <port>' % (sys.argv[0])
+      sys.exit(1)
+  site_id= int(sys.argv[1])
+  port = int(sys.argv[2])
+  dbsite = Site(site_id, port)

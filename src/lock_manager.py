@@ -25,37 +25,37 @@ class LockManager:
   def acquire_read_lock(self, transaction, variable):
     if not self.txn_has_read_lock(transaction, variable):
       if self._write_lock_table[variable] != None:
-        if self._write_lock_table[variable] != transaction.get_id():
+        if self._write_lock_table[variable] != transaction['_id']:
           raise AcquireLockException(Lock.WRITE, self._write_lock_table[variable])
-      self._read_lock_table[variable].append(transaction.get_id())
+      self._read_lock_table[variable].append(transaction['_id'])
 
 
   def acquire_write_lock(self, transaction, variable):
     if not self.txn_has_write_lock(transaction, variable):
       if self._write_lock_table[variable] != None:
-        if self._write_lock_table[variable] != transaction.get_id():
+        if self._write_lock_table[variable] != transaction['_id']:
           raise AcquireLockException(Lock.WRITE, self._write_lock_table[variable])
       elif self._read_lock_table[variable] != []:
         for txn in self._read_lock_table[variable]:
-          if txn != transaction.get_id():
+          if txn != transaction['_id']:
             raise AcquireLockException(Lock.READ, self._read_lock_table[variable])
-      self._write_lock_table[variable] = transaction.get_id()
+      self._write_lock_table[variable] = transaction['_id']
 
 
   def release_read_lock(self, transaction, variable):
     if self._read_lock_table[variable] != []:
       try:
-        self._read_lock_table[variable].remove(transaction.get_id())
+        self._read_lock_table[variable].remove(transaction['_id'])
       except ValueError:
         print 'This transaction %s didn\'t have a read lock on the variable' \
-            % transaction.get_id()
+            % transaction['_id']
     else:
       print 'There is no read lock on variable %s' % variable
 
 
   def release_write_lock(self, transaction, variable):
     if self._write_lock_table[variable] != None:
-      if self._write_lock_table[variable] == transaction.get_id():
+      if self._write_lock_table[variable] == transaction['_id']:
         self._write_lock_table[variable] = None
     else:
       print 'There is no write lock on variable %s' % variable
@@ -71,27 +71,27 @@ class LockManager:
 
   def _release_write_locks(self, transaction):
     for variable in self._write_lock_table.keys():
-      if self._write_lock_table[variable] == transaction.get_id():
+      if self._write_lock_table[variable] == transaction['_id']:
         self._write_lock_table[variable] = None
 
 
   def _release_read_locks(self, transaction):
     for variable in self._read_lock_table.keys():
       try:
-         self._read_lock_table[variable].remove(transaction.get_id())
+         self._read_lock_table[variable].remove(transaction['_id'])
       except ValueError:
         continue
 
 
   def txn_has_write_lock(self, transaction, variable):
-    return self._lookup_write_lock(variable) == transaction.get_id()
+    return self._lookup_write_lock(variable) == transaction['_id']
 
 
   def txn_has_read_lock(self, transaction, variable):
     transactions = self._lookup_read_lock(variable)
     if transactions:
       for t in transactions:
-        if t == transaction.get_id():
+        if t == transaction['_id']:
           return True
     return False
 

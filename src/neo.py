@@ -1,13 +1,17 @@
 import sys
 import traceback
+import xmlrpclib
 from pprint import pprint
 
 from transaction_manager import TransactionManager
 
+TXN_MGR_PORT = 7777
+
 class Neo:
   def __init__(self, filename):
     self._fp = open(filename, 'r')
-    self._tm = TransactionManager()
+    self._tm = xmlrpclib.ServerProxy('http://localhost:%d' % TXN_MGR_PORT,
+        allow_none=True)
     self._run()
 
 
@@ -34,7 +38,7 @@ class Neo:
     print '---------------------------------------------------------\n'
     print 'begin: ', txn_id
     try:
-      self._tm.begin(txn_id.strip())
+      print self._tm.begin(txn_id.strip())
     except Exception as e:
       print traceback.format_exc()
 
@@ -42,7 +46,7 @@ class Neo:
     print '---------------------------------------------------------\n'
     print 'beginRO: ', txn_id
     try:
-      self._tm.beginRO(txn_id.strip())
+      print self._tm.beginRO(txn_id.strip())
     except Exception as e:
       print traceback.format_exc()
 
@@ -50,7 +54,7 @@ class Neo:
     print '---------------------------------------------------------\n'
     print 'W: ', txn_id, var, value
     try:
-      self._tm.write(txn_id.strip(), var.strip(), value.strip())
+      print self._tm.write(txn_id.strip(), var.strip(), value.strip())
     except Exception as e:
       print traceback.format_exc()
 
@@ -58,14 +62,14 @@ class Neo:
     print '---------------------------------------------------------\n'
     print 'R: ', txn_id, var
     try:
-      self._tm.read(txn_id.strip(), var.strip())
+      print self._tm.read(txn_id.strip(), var.strip())
     except Exception as e:
       print traceback.format_exc()
 
   def end(self, txn_id):
     print '---------------------------------------------------------\n'
     print 'end: ', txn_id
-    self._tm.end(txn_id.strip())
+    print self._tm.end(txn_id.strip())
 
   def dump(self, arg):
     print '---------------------------------------------------------\n'
@@ -73,21 +77,21 @@ class Neo:
     if arg:
       try:
         site_id = int(arg.strip())
-        pprint(self._tm.dump(site_id=site_id))
+        pprint(self._tm.dump_site(site_id))
       except ValueError:
-        pprint(self._tm.dump(var_id=arg.strip()))
+        pprint(self._tm.dump_var(arg.strip()))
     else:
-      pprint(self._tm.dump())
+      pprint(self._tm.dump_all())
 
   def fail(self, site_id):
     print '---------------------------------------------------------\n'
     print 'fail: ', site_id
-    self._tm.fail(int(site_id.strip()))
+    print self._tm.fail(int(site_id.strip()))
 
   def recover(self, site_id):
     print '---------------------------------------------------------\n'
     print 'recover: ', site_id
-    self._tm.recover(int(site_id.strip()))
+    print self._tm.recover(int(site_id.strip()))
 
 
 if __name__ == '__main__':
