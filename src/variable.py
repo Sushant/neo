@@ -1,10 +1,19 @@
 from transaction import TransactionType
 
+
+# Used when a site recovers and it doesn't want to allow reads to 
+# it's replicated data
+class VariableStatus:
+  ACTIVE     = 0
+  RECOVERING = 1
+
+
 class Variable:
   def __init__(self, var_id, value):
     self._id                = var_id
     self._committed_values  = [(0, value)]
     self._uncommitted_value = None
+    self._status = VariableStatus.ACTIVE
 
 
   def write(self, transaction, value):
@@ -12,6 +21,8 @@ class Variable:
 
 
   def commit(self, timestamp):
+    if self.is_recovering():
+      self._status = VariableStatus.ACTIVE
     self._committed_values.append((timestamp, self._uncommitted_value))
 
 
@@ -25,7 +36,6 @@ class Variable:
 
   def read_committed(self, transaction=None):
     if transaction and transaction.get_type == TransactionType.READ_ONLY:
-      print 'READ_ONLY committed'
       for tick, val in self._committed_values:
         if tick <= transaction.get_ts():
           retval = val
@@ -33,7 +43,6 @@ class Variable:
           break
       return retval
     else:
-      print 'READ_WRITE committed'
       return self._committed_values[-1][1]
 
 
@@ -57,3 +66,14 @@ class Variable:
   def load_state(self, committed_values, uncommitted_values):
     self.load_committed(committed_values)
     self.load_uncommitted(uncommitted_values)
+
+  def recover(self):
+    self._status = VariableStatus.RECOVERING
+
+  def is_recovering(self):
+    return self._status == VariableStatus.RECOVERING
+
+
+  def is_replicated(self):
+    var_index = int(self._id[1:])
+    return (var_index % 2) == 0

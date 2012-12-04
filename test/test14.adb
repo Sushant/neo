@@ -1,0 +1,8 @@
+begin(T1)
+begin(T2)
+fail(2)
+W(T2,x8,88)
+recover(2)
+end(T2)
+dump(2)
+end(T1)

@@ -2,6 +2,7 @@ class Lock:
   READ  = 0
   WRITE = 1
 
+
 class AcquireLockException(Exception):
   def __init__(self, *args):
     self.args = [a for a in args]
@@ -71,7 +72,6 @@ class LockManager:
   def _release_write_locks(self, transaction):
     for variable in self._write_lock_table.keys():
       if self._write_lock_table[variable] == transaction.get_id():
-        print 'Releasing lock on %s for txn: %s' % (variable, transaction.get_id())
         self._write_lock_table[variable] = None
 
 

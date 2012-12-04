@@ -2,9 +2,11 @@ from variable import Variable
 from lock_manager import LockManager
 from transaction import TransactionType
 
+
 class SiteStatus:
   UP   = 0
   DOWN = 1
+
 
 class Site:
   def __init__(self, site_id):
@@ -28,6 +30,7 @@ class Site:
 
   def get_id(self):
     return self._id
+
 
   def dump(self, var=None):
     if var:
@@ -66,9 +69,11 @@ class Site:
 
   def recover(self, state):
     if not self.is_up():
-      self._load_state(state)
+      #self._load_state(state)
+      for var_id, var_obj in self._site_variables.iteritems():
+        if var_obj.is_replicated():
+          var_obj.recover()
       self._status = SiteStatus.UP
-
 
 
   def write(self, transaction, variable, value):
@@ -79,14 +84,16 @@ class Site:
       print 'Variable doesn\'t exist on site'
 
 
-  def read(self, transaction, variable):
-    if variable in self._site_variables:
-      if self._lm.txn_has_write_lock(transaction, variable):
-        return self._site_variables[variable].read_uncommitted(transaction)
+  def read(self, transaction, var_id):
+    if var_id in self._site_variables:
+      if self._site_variables[var_id].is_recovering():
+        return None
+      if self._lm.txn_has_write_lock(transaction, var_id):
+        return self._site_variables[var_id].read_uncommitted(transaction)
       else:
         if transaction.get_type() != TransactionType.READ_ONLY:
-          self._lm.acquire_read_lock(transaction, variable)
-        return self._site_variables[variable].read_committed(transaction)
+          self._lm.acquire_read_lock(transaction, var_id)
+        return self._site_variables[var_id].read_committed(transaction)
     else:
       return None
 

@@ -2,6 +2,7 @@ class TransactionType:
   READ_ONLY  = 0
   READ_WRITE = 1
 
+
 class TransactionStatus:
   ACTIVE  = 0
   ABORTED = 1
@@ -37,19 +38,24 @@ class Transaction:
     if self._status != TransactionStatus.WAITING:
       self._status = TransactionStatus.WAITING
 
+
   def activate(self):
     if self._status != TransactionStatus.ACTIVE:
       self._status = TransactionStatus.ACTIVE
+
 
   def abort(self):
     if self._status != TransactionStatus.ABORTED:
       self._status = TransactionStatus.ABORTED
 
+
   def is_aborted(self):
     return self._status == TransactionStatus.ABORTED
 
+
   def is_active(self):
     return self._status == TransactionStatus.ACTIVE
+
 
   def is_waiting(self):
     return self._status == TransactionStatus.WAITING
