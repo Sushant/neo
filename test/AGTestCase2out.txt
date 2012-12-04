@@ -1,0 +1,145 @@
+
+*************************************
+begin(T1)
+*************************************
+Transaction T1 created.
+
+*************************************
+begin(T2)
+*************************************
+Transaction T2 created.
+
+*************************************
+begin(T3)
+*************************************
+Transaction T3 created.
+
+*************************************
+fail(4)
+*************************************
+Site 4 failed.
+
+*************************************
+R(T1,x3)
+*************************************
+Variable x3 not found at site 1
+Variable x3 not found at site 2
+Variable x3 not found at site 3
+Can't read variable x3 from site 4 . Site 4 is down.
+Variable x3 not found at site 5
+Variable x3 not found at site 6
+Variable x3 not found at site 7
+Variable x3 not found at site 8
+Variable x3 not found at site 9
+Variable x3 not found at site 10
+Transaction T1 needs to be blocked.
+Adding operation R(T1,x3) to transaction T1's blocked operations queue.
+
+*************************************
+recover(4)
+*************************************
+Site 4 recovered.
+
+*************************************
+R(T1,x3)
+*************************************
+Read Lock request can be granted. Proceeding to lock acquisition stage.
+Value of variable x3 at Site 4 is 30
+
+*************************************
+R(T2,x3)
+*************************************
+Variable x3 not found at site 1
+Variable x3 not found at site 2
+Variable x3 not found at site 3
+Variable x3 found at site 4
+Read Lock request can be granted. Proceeding to lock acquisition stage.
+Value of variable x3 at Site 4 is 30
+
+*************************************
+W(T2,x4,500)
+*************************************
+Write lock request can be granted to Transaction T2
+Write lock acquired by Transaction T2 on variable x4 at Site 1
+Write lock acquired by Transaction T2 on variable x4 at Site 2
+Write lock acquired by Transaction T2 on variable x4 at Site 3
+Write lock acquired by Transaction T2 on variable x4 at Site 4
+Write lock acquired by Transaction T2 on variable x4 at Site 5
+Write lock acquired by Transaction T2 on variable x4 at Site 6
+Write lock acquired by Transaction T2 on variable x4 at Site 7
+Write lock acquired by Transaction T2 on variable x4 at Site 8
+Write lock acquired by Transaction T2 on variable x4 at Site 9
+Write lock acquired by Transaction T2 on variable x4 at Site 10
+
+*************************************
+fail(1)
+*************************************
+Site 1 failed.
+
+*************************************
+end(T2)
+*************************************
+Status of sites accessed by Transaction T2
+Site 1 - DOWN    Site 2 - UP    Site 3 - UP    Site 4 - UP    Site 5 - UP    Site 6 - UP    Site 7 - UP    Site 8 - UP    Site 9 - UP    Site 10 - UP    
+Transaction T2 can't be committed as all the sites are not up since the first time they were accessed. Aborting the transaction.
+
+*************************************
+fail(2)
+*************************************
+Site 2 failed.
+
+*************************************
+fail(3)
+*************************************
+Site 3 failed.
+
+*************************************
+fail(4)
+*************************************
+Site 4 failed.
+
+*************************************
+fail(5)
+*************************************
+Site 5 failed.
+
+*************************************
+fail(6)
+*************************************
+Site 6 failed.
+
+*************************************
+fail(7)
+*************************************
+Site 7 failed.
+
+*************************************
+fail(8)
+*************************************
+Site 8 failed.
+
+*************************************
+fail(9)
+*************************************
+Site 9 failed.
+
+*************************************
+fail(10)
+*************************************
+Site 10 failed.
+
+*************************************
+W(T3,x2,150)
+*************************************
+Can't write variable x2 to site 1 . Site 1 is down.
+Can't write variable x2 to site 2 . Site 2 is down.
+Can't write variable x2 to site 3 . Site 3 is down.
+Can't write variable x2 to site 4 . Site 4 is down.
+Can't write variable x2 to site 5 . Site 5 is down.
+Can't write variable x2 to site 6 . Site 6 is down.
+Can't write variable x2 to site 7 . Site 7 is down.
+Can't write variable x2 to site 8 . Site 8 is down.
+Can't write variable x2 to site 9 . Site 9 is down.
+Can't write variable x2 to site 10 . Site 10 is down.
+Transaction T3 needs to be blocked.
+Adding operation W(T3,x2,150) to transaction T3's blocked operations queue.

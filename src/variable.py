@@ -35,7 +35,7 @@ class Variable:
 
 
   def read_committed(self, transaction=None):
-    if transaction and transaction.get_type == TransactionType.READ_ONLY:
+    if transaction and transaction.get_type() == TransactionType.READ_ONLY:
       for tick, val in self._committed_values:
         if tick <= transaction.get_ts():
           retval = val

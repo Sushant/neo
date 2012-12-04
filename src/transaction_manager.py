@@ -41,7 +41,7 @@ class TransactionManager:
     if txn_id not in self._transactions:
       self._transactions[txn_id] = Transaction(txn_id, self._ts,
           txn_type=TransactionType.READ_ONLY)
-      print 'Began transaction %s with time_stamp %d' % \
+      print 'Began read-only transaction %s with time_stamp %d' % \
           (txn_id, self._transactions[txn_id].get_ts())
     else:
       raise Exception('Transaction with ID %s already exists' % txn_id)
@@ -76,8 +76,7 @@ class TransactionManager:
         else:
           # If we reach here, we weren't able to find a site to read from
           print 'Unable to write %s, no site available' % var
-          self._wait_list.append(('write', txn_id, var, value))
-          transaction.wait()
+          self._add_to_waitlist(('write', txn_id, var, value))
       except AcquireLockException as ale:
         self._handle_wait_die(('write', txn_id, var, value), ale.args[0],
             ale.args[1])
@@ -110,9 +109,7 @@ class TransactionManager:
               return retval
         # If we reach here, we weren't able to find a site to read from
         print 'Unable to read %s, no site available' % var
-        if not transaction.is_waiting():
-          self._wait_list.append(('read', txn_id, var))
-          transaction.wait()
+        self._add_to_waitlist(('read', txn_id, var))
       except AcquireLockException as ale:
         self._handle_wait_die(('read', txn_id, var), ale.args[0], ale.args[1])
     else:
@@ -127,18 +124,24 @@ class TransactionManager:
       if transaction.get_ts() > conflicting_txn.get_ts():
         self._abort(transaction)
       else:
-        if not transaction.is_waiting():
-          transaction.wait()
-          self._wait_list.append(command_tuple)
+        self._add_to_waitlist(command_tuple)
     elif isinstance(conflicting_txns, list):
       for conflicting_txn_id in conflicting_txns:
         conflicting_txn = self._transactions[conflicting_txn_id]
         if transaction.get_ts() > conflicting_txn.get_ts():
           self._abort(transaction)
           return
-      if not transaction.is_waiting():
-        transaction.wait()
-        self._wait_list.append(command_tuple)
+      self._add_to_waitlist(command_tuple)
+
+
+  def _add_to_waitlist(self, command_tuple):
+    txn_id = command_tuple[1]
+    transaction = self._transactions[txn_id]
+    if not transaction.is_waiting():
+      print 'Waitlisted Transaction %s at time_stamp %d' % (txn_id,
+          self._ts)
+      self._wait_list.append(command_tuple)
+      transaction.wait()
 
 
   def _abort(self, transaction):
@@ -147,7 +150,7 @@ class TransactionManager:
       for s in self._txn_sites[transaction.get_id()]:
         self._sites[s].abort(transaction)
         transaction.abort()
-      print 'Transaction %s aborted at time_stamp %d' % (txn_id, self._ts)
+      print 'Aborted Transaction %s at time_stamp %d' % (txn_id, self._ts)
       self._retry_waiting_txns()
     else:
       print 'Txn %s not found on transaction manager' % txn_id
@@ -206,13 +209,15 @@ class TransactionManager:
       else:
         return self._sites[site_id].dump()
     else:
-      var_id = int(var_id[1:])
+      var_index = int(var_id[1:])
       if site_id:
         return self._sites[site_id].dump(var_id)
       else:
-        sites = self._get_sites_for_var(var_id)
+        sites = self._get_sites_for_var(var_index)
+        sites_var = {}
         for s in sites:
-          return self._sites[s].dump(var_id)
+          sites_var[s] = self._sites[s].dump(var_id)
+        return sites_var
 
 
   def fail(self, site_id):
@@ -229,4 +234,5 @@ class TransactionManager:
         state = s.dump_state()
         if state:
           self._sites[site_id].recover(state)
+          self._retry_waiting_txns()
           break

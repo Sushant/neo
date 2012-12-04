@@ -29,7 +29,9 @@ class Neo:
             print 'Unknown method, exiting Neo...', traceback.format_exc()
             sys.exit(1)
 
+
   def begin(self, txn_id):
+    print '---------------------------------------------------------\n'
     print 'begin: ', txn_id
     try:
       self._tm.begin(txn_id.strip())
@@ -37,6 +39,7 @@ class Neo:
       print traceback.format_exc()
 
   def beginRO(self, txn_id):
+    print '---------------------------------------------------------\n'
     print 'beginRO: ', txn_id
     try:
       self._tm.beginRO(txn_id.strip())
@@ -44,6 +47,7 @@ class Neo:
       print traceback.format_exc()
 
   def W(self, txn_id, var, value):
+    print '---------------------------------------------------------\n'
     print 'W: ', txn_id, var, value
     try:
       self._tm.write(txn_id.strip(), var.strip(), value.strip())
@@ -51,6 +55,7 @@ class Neo:
       print traceback.format_exc()
 
   def R(self, txn_id, var):
+    print '---------------------------------------------------------\n'
     print 'R: ', txn_id, var
     try:
       self._tm.read(txn_id.strip(), var.strip())
@@ -58,10 +63,13 @@ class Neo:
       print traceback.format_exc()
 
   def end(self, txn_id):
+    print '---------------------------------------------------------\n'
     print 'end: ', txn_id
     self._tm.end(txn_id.strip())
 
   def dump(self, arg):
+    print '---------------------------------------------------------\n'
+    print 'dump: ', arg
     if arg:
       try:
         site_id = int(arg.strip())
@@ -70,13 +78,14 @@ class Neo:
         pprint(self._tm.dump(var_id=arg.strip()))
     else:
       pprint(self._tm.dump())
-      print 'dump: ', arg
 
   def fail(self, site_id):
+    print '---------------------------------------------------------\n'
     print 'fail: ', site_id
     self._tm.fail(int(site_id.strip()))
 
   def recover(self, site_id):
+    print '---------------------------------------------------------\n'
     print 'recover: ', site_id
     self._tm.recover(int(site_id.strip()))
 

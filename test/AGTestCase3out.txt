@@ -1,0 +1,203 @@
+
+*************************************
+begin(T1)
+*************************************
+Transaction T1 created.
+
+*************************************
+begin(T2)
+*************************************
+Transaction T2 created.
+
+*************************************
+beginRO(T3)
+*************************************
+Read-only transaction T3 created.
+
+*************************************
+R(T1,x2)
+*************************************
+Variable x2 found at site 1
+Read Lock request can be granted. Proceeding to lock acquisition stage.
+Value of variable x2 at Site 1 is 20
+
+*************************************
+W(T1,x2,150)
+*************************************
+Write lock request can be granted to Transaction T1
+Write lock acquired by Transaction T1 on variable x2 at Site 1
+Write lock acquired by Transaction T1 on variable x2 at Site 2
+Write lock acquired by Transaction T1 on variable x2 at Site 3
+Write lock acquired by Transaction T1 on variable x2 at Site 4
+Write lock acquired by Transaction T1 on variable x2 at Site 5
+Write lock acquired by Transaction T1 on variable x2 at Site 6
+Write lock acquired by Transaction T1 on variable x2 at Site 7
+Write lock acquired by Transaction T1 on variable x2 at Site 8
+Write lock acquired by Transaction T1 on variable x2 at Site 9
+Write lock acquired by Transaction T1 on variable x2 at Site 10
+
+*************************************
+dump(x2)
+*************************************
+----------
+Site 1
+----------
+x2=20
+----------
+Site 2
+----------
+x2=20
+----------
+Site 3
+----------
+x2=20
+----------
+Site 4
+----------
+x2=20
+----------
+Site 5
+----------
+x2=20
+----------
+Site 6
+----------
+x2=20
+----------
+Site 7
+----------
+x2=20
+----------
+Site 8
+----------
+x2=20
+----------
+Site 9
+----------
+x2=20
+----------
+Site 10
+----------
+x2=20
+
+*************************************
+dump()
+*************************************
+----------
+Site 1
+----------
+x2=20   x4=40   x6=60   x8=80   x10=100   x12=120   x14=140   x16=160   x18=180   x20=200   
+----------
+Site 2
+----------
+x1=10   x2=20   x4=40   x6=60   x8=80   x10=100   x11=110   x12=120   x14=140   x16=160   x18=180   x20=200   
+----------
+Site 3
+----------
+x2=20   x4=40   x6=60   x8=80   x10=100   x12=120   x14=140   x16=160   x18=180   x20=200   
+----------
+Site 4
+----------
+x2=20   x3=30   x4=40   x6=60   x8=80   x10=100   x12=120   x13=130   x14=140   x16=160   x18=180   x20=200   
+----------
+Site 5
+----------
+x2=20   x4=40   x6=60   x8=80   x10=100   x12=120   x14=140   x16=160   x18=180   x20=200   
+----------
+Site 6
+----------
+x2=20   x4=40   x5=50   x6=60   x8=80   x10=100   x12=120   x14=140   x15=150   x16=160   x18=180   x20=200   
+----------
+Site 7
+----------
+x2=20   x4=40   x6=60   x8=80   x10=100   x12=120   x14=140   x16=160   x18=180   x20=200   
+----------
+Site 8
+----------
+x2=20   x4=40   x6=60   x7=70   x8=80   x10=100   x12=120   x14=140   x16=160   x17=170   x18=180   x20=200   
+----------
+Site 9
+----------
+x2=20   x4=40   x6=60   x8=80   x10=100   x12=120   x14=140   x16=160   x18=180   x20=200   
+----------
+Site 10
+----------
+x2=20   x4=40   x6=60   x8=80   x9=90   x10=100   x12=120   x14=140   x16=160   x18=180   x19=190   x20=200   
+
+*************************************
+W(T2,x2,200)
+*************************************
+Variable x2 found at site 1
+Transaction T2 is younger than T1  transaction(s) locking variable x2
+Transaction T2 needs to be aborted. Informing all the sites that the transaction is aborting.
+
+*************************************
+R(T1,x2)
+*************************************
+Value of variable x2 is 150
+
+*************************************
+R(T3,x2)
+*************************************
+Committed value of variable x2 at read-only transaction T3's birth time is 20
+
+*************************************
+begin(T4)
+*************************************
+Transaction T4 created.
+
+*************************************
+W(T4,x3,345)
+*************************************
+Variable x3 not found at site 1
+Variable x3 not found at site 2
+Variable x3 not found at site 3
+Write lock request can be granted to Transaction T4
+Write lock acquired by Transaction T4 on variable x3 at Site 4
+
+*************************************
+R(T1,x3)
+*************************************
+Variable x3 not found at site 1
+Variable x3 not found at site 2
+Variable x3 not found at site 3
+Variable x3 found at site 4
+Transaction T1 is older than T4  transaction(s) locking variable x3
+Transaction T1 needs to be blocked.
+Adding operation R(T1,x3) to transaction T1's blocked operations queue.
+
+*************************************
+end(T4)
+*************************************
+Status of sites accessed by Transaction T4
+Site 4 - UP    
+Transaction T4 got commited at Site 4
+Transaction T4 ended successfully.
+
+*************************************
+R(T1,x3)
+*************************************
+Read Lock request can be granted. Proceeding to lock acquisition stage.
+Value of variable x3 at Site 4 is 345
+
+*************************************
+end(T3)
+*************************************
+Transaction T3 ended successfuly.
+
+*************************************
+end(T1)
+*************************************
+Status of sites accessed by Transaction T1
+Site 1 - UP    Site 2 - UP    Site 3 - UP    Site 4 - UP    Site 5 - UP    Site 6 - UP    Site 7 - UP    Site 8 - UP    Site 9 - UP    Site 10 - UP    
+Transaction T1 got commited at Site 1
+Transaction T1 got commited at Site 2
+Transaction T1 got commited at Site 3
+Transaction T1 got commited at Site 4
+Transaction T1 got commited at Site 5
+Transaction T1 got commited at Site 6
+Transaction T1 got commited at Site 7
+Transaction T1 got commited at Site 8
+Transaction T1 got commited at Site 9
+Transaction T1 got commited at Site 10
+Transaction T1 ended successfully.
