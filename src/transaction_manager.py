@@ -48,7 +48,7 @@ class TransactionManager:
 
 
   def _init_sites(self):
-    i = 0
+    i = 1
     for port in SITE_PORTS:
       site_client = xmlrpclib.ServerProxy('http://localhost:%d' % port,
           allow_none=True)
@@ -82,7 +82,7 @@ class TransactionManager:
     elif (var_id % 2) == 0:
       return self._sites.keys()
     else:
-      return [(var_id + 1) % 10]
+      return [1 + (var_id % 10)]
 
 
   def write(self, txn_id, var, value):
@@ -250,6 +250,7 @@ class TransactionManager:
 
   def dump_all(self):
     site_var = {}
+    print 'Sites: ', self._sites.keys()
     for s, obj in self._sites.iteritems():
       site_var[str(s)] = obj.dump()
     return site_var

@@ -42,7 +42,7 @@ class Site:
       value = 10 * i
       if i % 2 == 0:  # Even numbered variables are replicated
         self._site_variables[var_id] = Variable(var_id, value)
-      elif (i + 1) % 10 == self._id:
+      elif 1 + (i % 10) == self._id:
         self._site_variables[var_id] = Variable(var_id, value)
 
 
